@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>PCログ</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static',filename='style.css')}}">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+ 
+</head>
+<body>
+<div><h1>今日のカテゴリーランキング</h1>
+    <table>
+        <tr>
+            <th>カテゴリー</th>
+            <th>時間</th>
+        </tr>
+
+        {% for category,value in today_category_ranking %}
+        <tr>
+            <td>{{ category}}</td>
+            <td>{{ value}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+<div><h2>今日のタイムライン</h2>
+    <table>
+    <tr>
+        <th>開始</th>
+        <th>終了</th>
+        <th>アプリ</th>
+        <th>時間</th>
+        <th>タイトル</th>
+    </tr>
+    {% for window_title,app_name,start_time,end_time,seconds in today_timeline %}
+    <tr>
+        <td>{{start_time[11:16]}}</td>
+        <td>{{end_time[11:16]}}</td>
+        <td>{{app_name}}</td>
+        <td>{{seconds}}</td>
+        <td>{{window_title}}</td>
+    </tr>
+    {% endfor %}
+    </table>
+</div>
+
+<div><h2>アプリ使用ランキング TOP5</h2>
+    <details>
+    <table>
+        <tr>
+            <th>順位</th>
+            <th>アプリ</th>
+            <th>時間</th>
+        </tr>
+            {% for app, value in app_ranking %}
+            <tr>
+                <td>{{ loop.index}}</td>
+                <td>{{app}}</td>
+                <td>{{value}}</td>
+            </tr>
+            {% endfor %}
+    </table>
+    <table>
+        <tr>
+            <th>順位</th>
+            <th>アプリ</th>
+            <th>時間</th>
+
+            {% for app, value in daily_ranking %}
+            <tr>
+                <td>{{ loop.index}}</td>
+                <td>{{app}}</td>
+                <td>{{value}}</td>
+            </tr>
+            {% endfor %}
+    </table>
+    <table>
+        <tr>
+            <th>順位</th>
+            <th>アプリ</th>
+            <th>時間</th>
+
+            {% for app, value in category_ranking %}
+            <tr>
+                <td>{{ loop.index}}</td>
+                <td>{{app}}</td>
+                <td>{{value}}</td>
+            </tr>
+            {% endfor %}
+    </table>
+    <table>
+        <tr>
+            <th>順位</th>
+            <th>日付</th>
+            <th>カテゴリー</th>
+            <th>時間</th>
+
+            {% for item in daily_category_ranking %}
+            <tr>
+                <td>{{ loop.index}}</td>
+                <td>{{item.date}}</td>
+                <td>{{item.category}}</td>
+                <td>{{item.value}}</td>
+            </tr>
+            {% endfor %}
+    </table>
+    </details>
+</div>
+<div class="dashboard">
+    <div class="card">
+        <h2>アプリ別使用時間</h2>
+        <p>表示時間:{{period_labels[period]}}/単位:{{unit_labels[unit]}}</p>
+        <canvas id="appchart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>日別使用時間</h2>
+        <p>表示時間:{{period_labels[period]}}/単位:{{unit_labels[unit]}}</p>
+        <canvas id="dailychart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>カテゴリー別使用時間</h2>
+        <p>表示時間:{{period_labels[period]}}/単位:{{unit_labels[unit]}}</p>
+        <canvas id="categorychart"></canvas>
+    </div>
+
+    <div class="card">
+        <h2>日別カテゴリー別時間</h2>
+        <p>表示時間:{{period_labels[period]}}/単位:{{unit_labels[unit]}}</p>
+        <canvas id="dailycategorychart"></canvas>
+    </div>
+
+    <div class="form">
+        <form method="GET">
+            <select name="unit">
+                <option value="seconds"{% if unit == "seconds" %}selected{% endif %}>秒</option>
+                <option value="minutes"{% if unit == "minutes" %}selected{% endif %}>分</option>
+                <option value="hours"{% if unit == "hours" %}selected{% endif %}>時間</option>
+            </select>
+        
+            <select name="period">
+                <option value="all"{% if period == "all" %}selected{% endif %}>全期間</option>
+                <option value="today"{% if period == "today" %}selected{% endif %}>今日</option>
+                <option value="week"{% if period == "week" %}selected{% endif %}>今週</option>
+                <option value="month"{% if period == "month" %}selected{% endif %}>今月</option>
+                <option value="year"{% if period == "year" %}selected{% endif %}>今年</option>
+            </select>
+
+            <button type="submit">変更</button>
+        </form>
+
+        <a href="{{ url_for('categories') }}">カテゴリー設定</a>
+    </div>
+
+    <details>
+
+    <h1>PCログ一覧</h1>
+    <table border="1">
+        <tr>
+            <th>ウインドウ名</th>
+            <th>合計秒数</th>
+        </tr>
+
+        {% for sum in summary %}    
+        <tr>
+            <th>{{sum[0]}}</th>
+            <th>{{sum[1]}}</th>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <table border="1">
+        <tr>
+            <th>ID</th>
+            <th>ウィンドウ名</th>
+            <th>アプリ名</th>
+            <th>開始</th>
+            <th>終了</th>
+            <th>秒数</th>
+        </tr>
+
+        {% for log in logs %}
+        <tr>
+            <td>{{ log[0]}}</td>
+            <td>{{ log[1]}}</td>
+            <td>{{ log[2]}}</td>
+            <td>{{ log[3]}}</td>
+            <td>{{ log[4]}}</td>
+            <td>{{ log[5]}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h2>カテゴリー別集計</h2>
+    <table>
+        <tr>
+            <th>カテゴリー</th>
+            <th>時間</th>
+        </tr>
+
+        {% for category,value in category_summary %}
+        <tr>
+            <td>{{category}}</td>
+            <td>{{value}}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>日別カテゴリー集計</h3>
+    <table>
+    <tr>
+        <th>日付</th>
+        <th>カテゴリー</th>
+        <th>時間</th>
+    </tr>
+
+    {% for item in daily_category_summary %}
+    <tr>
+        <td>{{ item.date }}</td>
+        <td>{{ item.category }}</td>
+        <td>{{ item.value }}</td> 
+    </tr>
+    {% endfor %}
+    </table>
+    </details>
+
+
+<script>
+    ///合計
+    const summary={{summary | tojson}};
+
+    const labels=summary.map(item => item[0]);
+    const hours=summary.map(item => item[1]);
+
+    const ctx=document.getElementById("appchart");
+
+    new Chart(ctx,{
+        type:"bar",
+        data: {
+            labels:labels,
+            datasets:[{
+                label:"使用時間",
+                data:hours
+            }]
+        }
+    })
+    ///日付別
+    const daily={{daily_summary | tojson}};
+
+    const dates=daily.map(item => item[0]);
+    const dailyhours=daily.map(item => item[1]);
+
+    const ctx2=document.getElementById("dailychart");
+
+    new Chart(ctx2,{
+        type:"pie",
+        data: {
+            labels:dates,
+            datasets:[{
+                label:"一日の使用時間",
+                data:dailyhours
+            }]
+        }
+    })
+    ///カテゴリー別
+    const categorydata={{category_summary | tojson}};
+    const categorylabels=categorydata.map(item => item[0]);
+    const categoryvalues=categorydata.map(item => item[1]);
+
+    const ctx3=document.getElementById("categorychart");
+
+    new Chart(ctx3,{
+        type:"bar",
+        data:{
+            labels:categorylabels,
+            datasets:[{
+                label:"使用時間",
+                data:categoryvalues,
+                backgroundColor:[
+                "rgba(147, 197, 253, 0.75)",
+                "rgba(196, 181, 253, 0.75)",
+                "rgba(167, 243, 208, 0.75)",
+                "rgba(253, 230, 138, 0.75)",
+                "rgba(251, 207, 232, 0.75)"
+                ]
+        }]
+            
+        },
+        options:{
+            responsive:true,
+            plugins:{
+                legend:{
+                    display:false
+                }
+            }
+        }
+    });
+    ///日付かつカテゴリー別積み上げ棒グラフ
+    const dailycategorydata={{daily_category_summary | tojson}};
+
+    const dailycategorylabels=[...new Set(dailycategorydata.map(item => item.date))];
+    const dailycategories=[...new Set(dailycategorydata.map(item => item.category))];
+    
+    const datasets=[];
+
+    for(const dailycategory of dailycategories){
+        const values=[];
+
+        for (const dailycategorylabel of dailycategorylabels){
+            const found = dailycategorydata.find(item =>
+                item.date === dailycategorylabel && item.category == dailycategory
+            );
+
+            if (found){
+                values.push(found.value);
+            }else{
+                values.push(0);
+            }
+        }
+        datasets.push({
+            label:dailycategory,
+            data:values,
+            borderRadius:8
+        })
+    }
+
+    const ctx4=document.getElementById("dailycategorychart");
+
+    new Chart(ctx4,{
+        type:"bar",
+        data:{ 
+            labels:dailycategorylabels,
+            datasets:datasets
+        },
+        options:{
+            responsive:true,
+            scales:{
+                x:{
+                    stacked:true
+                },
+                y:{
+                    stacked:true
+                }
+            }
+        }
+    })
+
+</script>
+</body>
+</html>
+
